@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semáforo ATM — En vivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1F4E79;--navy-mid:#2E75B6;--navy-light:#D6E4F0;--navy-pale:#EBF3FB;
+  --verde:#0F6E56;--verde-bg:#E1F5EE;--verde-bd:#A9DFCB;
+  --amarillo:#8A6D00;--amarillo-bg:#FFF6DA;--amarillo-bd:#F0D778;
+  --naranja:#B15600;--naranja-bg:#FEECDC;--naranja-bd:#F5B678;
+  --rojo:#A32D2D;--rojo-bg:#FDEAEA;--rojo-bd:#EDA9A9;
+  --gris:#5B5B57;--gris-bg:#EDECE8;--gris-bd:#CFCEC7;
+  --surface:#F7F6F3;--border:#E2E0D8;--text:#1C1C1A;--text-muted:#6B6A66;--text-light:#9B9A96;
+  --white:#FFFFFF;--radius-sm:6px;--radius-md:10px;--radius-lg:16px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.07);
+  --font:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+html,body{background:var(--surface);color:var(--text);font-family:var(--font);font-size:14.5px}
+.app{max-width:1360px;margin:0 auto;padding-bottom:40px}
+header{background:var(--navy);color:#fff;padding:22px 26px}
+header .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:19px;font-weight:600}
+header h1 span{font-weight:400;color:rgba(255,255,255,.55);margin-left:8px;font-size:15px}
+.badge-src{margin-left:auto;font-size:11.5px;padding:4px 12px;border-radius:20px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);display:flex;align-items:center;gap:6px}
+.badge-src .live-dot{width:7px;height:7px;border-radius:50%;background:#4ADE80;animation:pulse-live 1.6s infinite}
+@keyframes pulse-live{0%,100%{opacity:1}50%{opacity:.35}}
+header p.sub{margin-top:6px;font-size:13px;color:rgba(255,255,255,.65);max-width:760px;line-height:1.5}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;padding:18px 26px 0}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 12px;text-align:center;cursor:pointer;transition:all .15s;box-shadow:var(--shadow-sm)}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-card.active{outline:2px solid var(--navy)}
+.stat-n{font-size:24px;font-weight:700;line-height:1}
+.stat-l{font-size:11.5px;color:var(--text-muted);margin-top:4px;font-weight:500}
+.stat-card.total .stat-n{color:var(--navy)}
+.stat-card.verde .stat-n{color:var(--verde)}
+.stat-card.amarillo .stat-n{color:var(--amarillo)}
+.stat-card.naranja .stat-n{color:var(--naranja)}
+.stat-card.rojo .stat-n{color:var(--rojo)}
+.stat-card.gris .stat-n{color:var(--gris)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:1px}
+.dot.verde{background:var(--verde)}.dot.amarillo{background:var(--amarillo)}.dot.naranja{background:var(--naranja)}.dot.rojo{background:var(--rojo)}.dot.gris{background:var(--gris)}
+.legend{margin:16px 26px 0;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;box-shadow:var(--shadow-sm)}
+.legend summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--navy);list-style:none;display:flex;align-items:center;gap:6px}
+.legend summary::-webkit-details-marker{display:none}
+.legend summary::before{content:'▸';transition:transform .15s}
+.legend[open] summary::before{transform:rotate(90deg)}
+.legend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:12px}
+.legend-item{border-radius:var(--radius-sm);padding:9px 11px;font-size:12px;line-height:1.5}
+.legend-item b{display:block;font-size:12.5px;margin-bottom:3px}
+.legend-item.verde{background:var(--verde-bg);color:var(--verde);border:1px solid var(--verde-bd)}
+.legend-item.amarillo{background:var(--amarillo-bg);color:var(--amarillo);border:1px solid var(--amarillo-bd)}
+.legend-item.naranja{background:var(--naranja-bg);color:var(--naranja);border:1px solid var(--naranja-bd)}
+.legend-item.rojo{background:var(--rojo-bg);color:var(--rojo);border:1px solid var(--rojo-bd)}
+.legend-item.gris{background:var(--gris-bg);color:var(--gris);border:1px solid var(--gris-bd)}
+.legend-item ul{padding-left:16px;margin-top:3px;font-weight:400}
+.legend-note{margin-top:10px;font-size:11.5px;color:var(--text-muted)}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 26px 0}
+#search{flex:1;min-width:200px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;background:var(--white)}
+#search:focus{outline:none;border-color:var(--navy-mid)}
+select{padding:9px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;background:var(--white);color:var(--text)}
+.clear-btn,.refresh-btn{padding:9px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--white);font-size:13px;cursor:pointer;color:var(--text-muted)}
+.clear-btn:hover,.refresh-btn:hover{background:var(--navy-pale);color:var(--navy);border-color:var(--navy-mid)}
+#result-count{font-size:12.5px;color:var(--text-muted);margin:10px 26px 0;display:flex;justify-content:space-between}
+.table-wrap{margin:10px 26px 0;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-sm)}
+table{width:100%;border-collapse:collapse;font-size:12.8px}
+thead th{background:var(--navy);color:#fff;text-align:left;padding:10px 12px;font-weight:500;font-size:12px;position:sticky;top:0;cursor:pointer;user-select:none;white-space:nowrap}
+thead th:hover{background:var(--navy-mid)}
+thead th.sorted::after{content:' ▾';font-size:10px}
+tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+tbody tr:hover{background:var(--navy-pale)}
+tbody tr.expanded{background:var(--navy-pale)}
+tbody td{padding:9px 12px;vertical-align:top}
+.sem-pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px}
+.sem-pill.verde{background:var(--verde-bg);color:var(--verde)}
+.sem-pill.amarillo{background:var(--amarillo-bg);color:var(--amarillo)}
+.sem-pill.naranja{background:var(--naranja-bg);color:var(--naranja)}
+.sem-pill.rojo{background:var(--rojo-bg);color:var(--rojo)}
+.sem-pill.gris{background:var(--gris-bg);color:var(--gris)}
+.mono{font-family:var(--mono);color:var(--text-muted)}
+.muted{color:var(--text-light)}
+.detail-row td{background:var(--white);padding:14px 20px;border-bottom:2px solid var(--navy-light)}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;font-size:12.5px}
+.detail-grid div b{display:block;color:var(--text-light);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;font-weight:600}
+.detail-full{grid-column:1/-1}
+.no-results,.state-msg{text-align:center;padding:40px;color:var(--text-light)}
+.state-msg.err{color:var(--rojo)}
+@media(max-width:900px){
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .table-wrap{overflow-x:auto}
+  table{min-width:900px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="top">
+      <h1>Semáforo de estado de uso ATM <span>/ Padrón Oficial</span></h1>
+      <div class="badge-src"><span class="live-dot"></span><span id="badge-text">Cargando…</span></div>
+    </div>
+    <p class="sub">Clasificación automática de las ATMs según su aptitud para dictar cursos, estado de uso, aptitud de circulación y etiqueta de estado funcional. Los datos se leen en cada apertura desde <code id="data-url-label">atm_data.json</code>, generado automáticamente cada vez que se actualiza el padrón.</p>
+  </header>
+
+  <div class="stats" id="stats">
+    <div class="stat-card total" data-filter="">
+      <div class="stat-n" id="n-total">—</div><div class="stat-l">Total ATMs</div>
+    </div>
+    <div class="stat-card verde" data-filter="verde">
+      <div class="stat-n" id="n-verde">—</div><div class="stat-l"><span class="dot verde"></span>Verde</div>
+    </div>
+    <div class="stat-card amarillo" data-filter="amarillo">
+      <div class="stat-n" id="n-amarillo">—</div><div class="stat-l"><span class="dot amarillo"></span>Amarillo</div>
+    </div>
+    <div class="stat-card naranja" data-filter="naranja">
+      <div class="stat-n" id="n-naranja">—</div><div class="stat-l"><span class="dot naranja"></span>Naranja</div>
+    </div>
+    <div class="stat-card rojo" data-filter="rojo">
+      <div class="stat-n" id="n-rojo">—</div><div class="stat-l"><span class="dot rojo"></span>Rojo</div>
+    </div>
+    <div class="stat-card gris" data-filter="gris">
+      <div class="stat-n" id="n-gris">—</div><div class="stat-l"><span class="dot gris"></span>Sin datos</div>
+    </div>
+  </div>
+
+  <details class="legend">
+    <summary>Ver criterio del semáforo (5 niveles, en orden de prioridad)</summary>
+    <div class="legend-grid">
+      <div class="legend-item verde">
+        <b>🟢 Verde — Apta y en buen estado</b>
+        Apta para dictar cursos = Sí, etiqueta funcional "Inversión menor", activa y apta para circular, sin observaciones que la contradigan.
+      </div>
+      <div class="legend-item amarillo">
+        <b>🟡 Amarillo — Apta, con alertas menores</b>
+        <ul>
+          <li>Apta para cursos = Sí, pero está Inactiva</li>
+          <li>Etiqueta funcional "Puesta a punto"</li>
+          <li>Apta para circular = "Requiere revisión"</li>
+          <li>Especialidad declarada ≠ real</li>
+        </ul>
+      </div>
+      <div class="legend-item naranja">
+        <b>🟠 Naranja — Aptitud comprometida</b>
+        <ul>
+          <li>Apta para cursos = "Requiere revisión"</li>
+          <li>Etiqueta funcional "Inversión sustantiva"</li>
+          <li>Estado de uso "En reparación"</li>
+          <li>No apta para circular (no se puede reubicar)</li>
+        </ul>
+      </div>
+      <div class="legend-item rojo">
+        <b>🔴 Rojo — No apta / crítica</b>
+        <ul>
+          <li>Apta para dictar cursos = "No"</li>
+          <li>Etiqueta funcional "Desestimar continuidad"</li>
+          <li>Estado de uso "Cerrada"</li>
+        </ul>
+      </div>
+      <div class="legend-item gris">
+        <b>⚪ Gris — Sin datos disponibles</b>
+        Faltan uno o más de los campos clave (apta para cursos, estado de uso o etiqueta funcional) para poder clasificarla.
+      </div>
+    </div>
+    <p class="legend-note">Reglas aplicadas en cascada de mayor a menor gravedad: gana la primera que aplica. "Apta para dictar cursos" es la señal que más pesa: si es "Sí" y no hay excepciones, el ATM va a Verde. Esta clasificación ya viene calculada desde el origen (Office Script sobre el Excel); este panel solo la muestra.</p>
+  </details>
+
+  <div class="controls">
+    <input id="search" type="text" placeholder="Buscar por ATM N°, CUE, jurisdicción, localidad o especialidad…" disabled>
+    <select id="f-prov" disabled><option value="">Todas las jurisdicciones</option></select>
+    <select id="f-cursos" disabled><option value="">Apta cursos: todas</option><option value="Sí">Sí</option><option value="No">No</option><option value="Requiere revisión">Requiere revisión</option></select>
+    <button class="clear-btn" onclick="clearFilters()">Limpiar filtros</button>
+    <button class="refresh-btn" onclick="cargarDatos()">↻ Volver a cargar</button>
+  </div>
+
+  <div id="result-count"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-key="semaforo">Semáforo</th>
+          <th data-key="jurisdiccion">Jurisdicción</th>
+          <th data-key="atm_n">ATM N°</th>
+          <th data-key="cue">CUE</th>
+          <th data-key="etiqueta_ef">Etiqueta funcional</th>
+          <th data-key="estado_uso">Estado de uso</th>
+          <th data-key="apta_circular">Apta circular</th>
+          <th data-key="apta_cursos">Apta cursos</th>
+          <th data-key="localidad">Localidad actual</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"><tr><td colspan="9" class="state-msg">Cargando datos…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ── CONFIGURACIÓN ─────────────────────────────────────────────
+// Ruta (relativa o absoluta) al archivo de datos que regenera el
+// flujo de Power Automate cada vez que cambia el padrón.
+// Si el HTML y el JSON están en la misma carpeta/repositorio, dejar
+// la ruta relativa tal cual. Si el JSON queda en otro host, poner
+// la URL absoluta (debe permitir CORS para este dominio).
+const DATA_URL = 'atm_data.json';
+
+const SEM_LABEL = {verde:'Verde',amarillo:'Amarillo',naranja:'Naranja',rojo:'Rojo',gris:'Sin datos'};
+const SEM_ICON = {verde:'🟢',amarillo:'🟡',naranja:'🟠',rojo:'🔴',gris:'⚪'};
+const SEM_ORDER = {rojo:0, naranja:1, amarillo:2, gris:3, verde:4};
+
+let DATA = [];
+let META = {};
+let state = { search:'', semaforo:'', prov:'', cursos:'', sortKey:'semaforo', sortDir:1, expanded:null };
+
+document.getElementById('data-url-label').textContent = DATA_URL;
+
+async function cargarDatos(){
+  document.getElementById('badge-text').textContent = 'Actualizando…';
+  document.getElementById('tbody').innerHTML = '<tr><td colspan="9" class="state-msg">Cargando datos…</td></tr>';
+  try{
+    const res = await fetch(DATA_URL, { cache: 'no-store' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    // Acepta tanto { meta:{...}, atms:[...] } como un array plano [...]
+    if(Array.isArray(json)){ DATA = json; META = {}; }
+    else { DATA = json.atms || json.data || []; META = json.meta || {}; }
+    DATA.forEach(r => r.atm_n = parseInt(r.atm) || 0);
+    inicializarControles();
+    render();
+    const fecha = META.actualizado || META.updated_at;
+    document.getElementById('badge-text').textContent = fecha ? ('Actualizado ' + fecha) : 'Datos cargados';
+    ['search','f-prov','f-cursos'].forEach(id=>document.getElementById(id).disabled=false);
+  }catch(e){
+    document.getElementById('badge-text').textContent = 'Error al cargar';
+    document.getElementById('tbody').innerHTML =
+      `<tr><td colspan="9" class="state-msg err">No se pudo cargar ${DATA_URL}.<br>${e.message}<br>Verificá que el archivo exista en esa ruta y sea accesible desde este dominio.</td></tr>`;
+  }
+}
+
+function inicializarControles(){
+  const sel = document.getElementById('f-prov');
+  sel.innerHTML = '<option value="">Todas las jurisdicciones</option>';
+  const provs = [...new Set(DATA.map(r=>r.jurisdiccion))].sort();
+  provs.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; sel.appendChild(o); });
+
+  document.getElementById('n-total').textContent = DATA.length;
+  ['verde','amarillo','naranja','rojo','gris'].forEach(c=>{
+    document.getElementById('n-'+c).textContent = DATA.filter(r=>r.semaforo===c).length;
+  });
+}
+
+document.querySelectorAll('.stat-card').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    const f = el.dataset.filter;
+    state.semaforo = (state.semaforo===f) ? '' : f;
+    document.querySelectorAll('.stat-card').forEach(c=>c.classList.remove('active'));
+    if(state.semaforo) el.classList.add('active');
+    render();
+  });
+});
+document.getElementById('search').addEventListener('input', e=>{ state.search = e.target.value.toLowerCase(); render(); });
+document.getElementById('f-prov').addEventListener('change', e=>{ state.prov = e.target.value; render(); });
+document.getElementById('f-cursos').addEventListener('change', e=>{ state.cursos = e.target.value; render(); });
+document.querySelectorAll('thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const k = th.dataset.key;
+    if(state.sortKey===k) state.sortDir *= -1; else { state.sortKey=k; state.sortDir=1; }
+    render();
+  });
+});
+
+function clearFilters(){
+  state = { search:'', semaforo:'', prov:'', cursos:'', sortKey:'semaforo', sortDir:1, expanded:null };
+  document.getElementById('search').value='';
+  document.getElementById('f-prov').value='';
+  document.getElementById('f-cursos').value='';
+  document.querySelectorAll('.stat-card').forEach(c=>c.classList.remove('active'));
+  render();
+}
+
+function filtered(){
+  return DATA.filter(r=>{
+    if(state.semaforo && r.semaforo!==state.semaforo) return false;
+    if(state.prov && r.jurisdiccion!==state.prov) return false;
+    if(state.cursos && r.apta_cursos!==state.cursos) return false;
+    if(state.search){
+      const hay = [r.atm,r.cue,r.jurisdiccion,r.localidad,r.especialidad_decl,r.especialidad_real].join(' ').toLowerCase();
+      if(!hay.includes(state.search)) return false;
+    }
+    return true;
+  }).sort((a,b)=>{
+    let av = a[state.sortKey], bv = b[state.sortKey];
+    if(state.sortKey==='semaforo'){ av = SEM_ORDER[a.semaforo]; bv = SEM_ORDER[b.semaforo]; }
+    if(typeof av==='string') av = av.toLowerCase();
+    if(typeof bv==='string') bv = bv.toLowerCase();
+    if(av<bv) return -1*state.sortDir;
+    if(av>bv) return 1*state.sortDir;
+    return 0;
+  });
+}
+
+function esc(s){ return (s||'').toString().replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function render(){
+  if(DATA.length===0) return;
+  document.querySelectorAll('thead th').forEach(th=>th.classList.toggle('sorted', th.dataset.key===state.sortKey));
+  const rows = filtered();
+  document.getElementById('result-count').innerHTML =
+    `<span>Mostrando ${rows.length} de ${DATA.length} ATMs</span>`;
+  const tbody = document.getElementById('tbody');
+  if(rows.length===0){
+    tbody.innerHTML = `<tr><td colspan="9" class="no-results">No se encontraron ATMs con esos filtros.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(r=>{
+    const key = r.atm+'-'+r.jurisdiccion;
+    const isExp = state.expanded===key;
+    let html = `<tr class="${isExp?'expanded':''}" onclick="toggle('${key.replace(/'/g,"\\'")}')">
+      <td><span class="sem-pill ${r.semaforo}">${SEM_ICON[r.semaforo]} ${SEM_LABEL[r.semaforo]}</span></td>
+      <td>${esc(r.jurisdiccion)}</td>
+      <td class="mono">${esc(r.atm)}</td>
+      <td class="mono">${esc(r.cue)||'<span class=\"muted\">—</span>'}</td>
+      <td>${esc(r.etiqueta_ef)||'<span class="muted">—</span>'}</td>
+      <td>${esc(r.estado_uso)||'<span class="muted">—</span>'}</td>
+      <td>${esc(r.apta_circular)||'<span class="muted">—</span>'}</td>
+      <td>${esc(r.apta_cursos)||'<span class="muted">—</span>'}</td>
+      <td>${esc(r.localidad)||'<span class="muted">—</span>'}</td>
+    </tr>`;
+    if(isExp){
+      html += `<tr class="detail-row"><td colspan="9"><div class="detail-grid">
+        <div><b>Motivo del semáforo</b>${esc(r.motivo_semaforo)}</div>
+        <div><b>Especialidad declarada</b>${esc(r.especialidad_decl)||'—'}</div>
+        <div><b>Especialidad real vigente</b>${esc(r.especialidad_real)||'—'}</div>
+        <div><b>¿Coincide especialidad?</b>${esc(r.coincide_esp)||'—'}</div>
+        <div><b>Provincia de ubicación</b>${esc(r.provincia_ubic)||'—'}</div>
+        <div><b>Cursos activos</b>${esc(r.cursos_activos)}</div>
+        <div class="detail-full"><b>Observaciones — Estado funcional</b>${esc(r.obs_ef)||'—'}</div>
+        <div class="detail-full"><b>Observaciones generales</b>${esc(r.obs_gen)||'—'}</div>
+      </div></td></tr>`;
+    }
+    return html;
+  }).join('');
+}
+
+function toggle(key){
+  state.expanded = (state.expanded===key) ? null : key;
+  render();
+}
+
+cargarDatos();
+</script>
+</body>
+</html>
