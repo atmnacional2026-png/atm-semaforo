@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Padrón ATM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+:root{
+  color-scheme:light;
+  --navy:#1F4E79;--navy-mid:#2E75B6;--navy-pale:#EBF3FB;--navy-line:#C9DCEF;
+  --head-bg:#1F4E79;--head-ink:#FFFFFF;--head-muted:rgba(255,255,255,.66);
+  --bar:#2E75B6;--bar-dim:#B9CFE6;
+  --ok:#2E9E6F;--warn:#D9A800;--serious:#E07A1F;--crit:#C94444;--none:#B4B2AA;
+  --ok-ink:#0F6E56;--warn-ink:#7A6000;--serious-ink:#A04E00;--crit-ink:#A32D2D;--none-ink:#5B5B57;
+  --ok-bg:#E1F5EE;--warn-bg:#FFF6DA;--serious-bg:#FEECDC;--crit-bg:#FDEAEA;--none-bg:#EDECE8;
+  --bg:#F5F6F4;--surface:#FFFFFF;--border:#E0E2DD;--grid:#ECEDE9;
+  --text:#1B1D1C;--text-muted:#5F625F;--text-light:#8E918D;
+  --radius:10px;--shadow:0 1px 3px rgba(20,30,40,.07);
+  --font:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --navy:#8DB8E2;--navy-mid:#6FA8DC;--navy-pale:#1C2A38;--navy-line:#2C4258;
+    --head-bg:#14263A;--head-ink:#EAF1F8;--head-muted:rgba(234,241,248,.62);
+    --bar:#6FA8DC;--bar-dim:#2E4760;
+    --ok:#3DB887;--warn:#E3B81E;--serious:#EE8F3C;--crit:#E06464;--none:#77756F;
+    --ok-ink:#7CD8B2;--warn-ink:#EFCB5A;--serious-ink:#F4AC6C;--crit-ink:#F29A9A;--none-ink:#B8B6AF;
+    --ok-bg:#16322A;--warn-bg:#352D10;--serious-bg:#3A2616;--crit-bg:#3A1C1C;--none-bg:#2A2A28;
+    --bg:#121517;--surface:#1B1F22;--border:#2D3236;--grid:#262B2E;
+    --text:#E7E9E6;--text-muted:#A5AAA6;--text-light:#767B78;
+    --shadow:0 1px 3px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --navy:#8DB8E2;--navy-mid:#6FA8DC;--navy-pale:#1C2A38;--navy-line:#2C4258;
+  --head-bg:#14263A;--head-ink:#EAF1F8;--head-muted:rgba(234,241,248,.62);
+  --bar:#6FA8DC;--bar-dim:#2E4760;
+  --ok:#3DB887;--warn:#E3B81E;--serious:#EE8F3C;--crit:#E06464;--none:#77756F;
+  --ok-ink:#7CD8B2;--warn-ink:#EFCB5A;--serious-ink:#F4AC6C;--crit-ink:#F29A9A;--none-ink:#B8B6AF;
+  --ok-bg:#16322A;--warn-bg:#352D10;--serious-bg:#3A2616;--crit-bg:#3A1C1C;--none-bg:#2A2A28;
+  --bg:#121517;--surface:#1B1F22;--border:#2D3236;--grid:#262B2E;
+  --text:#E7E9E6;--text-muted:#A5AAA6;--text-light:#767B78;
+  --shadow:0 1px 3px rgba(0,0,0,.4);
+}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14.5px;line-height:1.45}
+.app{max-width:1360px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+@media(min-width:760px){.app{padding-inline:26px}}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--navy-mid);outline-offset:2px}
+
+header.top{background:var(--head-bg);color:var(--head-ink);margin-inline:-16px;padding:22px 16px 20px}
+@media(min-width:760px){header.top{margin-inline:-26px;padding-inline:26px}}
+.top-row{display:flex;align-items:baseline;gap:10px 16px;flex-wrap:wrap}
+header h1{font-size:20px;font-weight:600;text-wrap:balance}
+header h1 span{font-weight:400;color:var(--head-muted);font-size:15px;margin-left:6px}
+.src{margin-left:auto;font-size:12px;color:var(--head-muted);font-family:var(--mono)}
+header p{margin-top:6px;font-size:13px;color:var(--head-muted);max-width:72ch}
+
+.section-label{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);font-weight:600}
+
+/* Filtros */
+.filters{margin-top:18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px}
+.filters-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.filters-head .count{font-size:13px;color:var(--text-muted)}
+.filters-head .count b{color:var(--text);font-variant-numeric:tabular-nums}
+.btn{padding:7px 12px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface);font-size:12.5px;cursor:pointer;color:var(--text-muted)}
+.btn:hover{background:var(--navy-pale);color:var(--navy);border-color:var(--navy-mid)}
+.btn.primary{margin-left:auto}
+.filter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 12px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:11.5px;color:var(--text-muted);font-weight:500}
+.field select,.field input{width:100%;padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface);font-size:13px;min-width:0}
+.field select.on{border-color:var(--navy-mid);background:var(--navy-pale);color:var(--navy);font-weight:500}
+.field.search{grid-column:1/-1}
+@media(min-width:760px){.field.search{grid-column:span 2}}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:20px;background:var(--navy-pale);color:var(--navy);font-size:12px;border:1px solid var(--navy-line);cursor:pointer}
+.chip i{font-style:normal;color:var(--text-muted)}
+.chip span.x{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--surface);font-size:11px}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 14px;box-shadow:var(--shadow)}
+.kpi .n{font-size:25px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--text)}
+.kpi .l{font-size:12px;color:var(--text-muted);margin-top:3px}
+.kpi .s{font-size:11.5px;color:var(--text-light);margin-top:2px;font-variant-numeric:tabular-nums}
+
+/* Paneles */
+.grid2{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px}
+@media(min-width:980px){.grid2{grid-template-columns:3fr 2fr}}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px 16px;min-width:0}
+.panel h2{font-size:14px;font-weight:600;margin-bottom:2px}
+.panel .hint{font-size:11.5px;color:var(--text-light);margin-bottom:12px}
+.legend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:11.5px;color:var(--text-muted);margin-bottom:10px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.sw{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+.bars{display:flex;flex-direction:column;gap:3px}
+.brow{display:grid;grid-template-columns:minmax(90px,38%) 1fr 34px;align-items:center;gap:8px;padding:3px 4px;border-radius:6px;cursor:pointer;font-size:12.3px}
+.brow:hover{background:var(--navy-pale)}
+.brow.sel{background:var(--navy-pale);box-shadow:inset 0 0 0 1.5px var(--navy-mid)}
+.brow.dim .track{opacity:.35}
+.brow .lab{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.brow .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--text-muted);font-size:12px}
+.track{display:flex;gap:2px;height:14px;align-items:stretch;border-left:1px solid var(--border);padding-left:0}
+.seg{height:100%;min-width:2px}
+.seg:last-child{border-radius:0 4px 4px 0}
+.seg.single{background:var(--bar)}
+
+/* Tabla resumen */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:12.6px}
+th{background:var(--navy-pale);color:var(--navy);text-align:left;font-weight:600;font-size:11.5px;padding:8px 10px;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--navy-line);position:sticky;top:0}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+th.sorted::after{content:' ▾'}
+th.sorted.asc::after{content:' ▴'}
+td{padding:7px 10px;border-bottom:1px solid var(--grid);vertical-align:top}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--navy-pale)}
+tfoot td{font-weight:600;border-top:1.5px solid var(--border);border-bottom:none}
+.mono{font-family:var(--mono);font-size:12px}
+.muted{color:var(--text-light)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.pill::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-bg);color:var(--ok-ink)}
+.pill.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.pill.serious{background:var(--serious-bg);color:var(--serious-ink)}
+.pill.crit{background:var(--crit-bg);color:var(--crit-ink)}
+.pill.none{background:var(--none-bg);color:var(--none-ink)}
+.yes{color:var(--ok-ink);font-weight:500}.no{color:var(--crit-ink);font-weight:500}.rev{color:var(--serious-ink);font-weight:500}
+
+.list-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.list-head h2{margin:0}
+.list-head .tools{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.list-head select{padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface);font-size:12.5px}
+#detalle-table{min-width:980px}
+#resumen-table{min-width:640px}
+tr.exp{background:var(--navy-pale)}
+tr.detail td{background:var(--surface);padding:14px 16px 18px;border-bottom:2px solid var(--navy-line);cursor:default}
+tr.detail:hover{background:none}
+.dgroups{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.dgroup h3{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--navy);margin-bottom:6px;font-weight:600}
+.dgroup dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12.3px}
+.dgroup dt{color:var(--text-muted)}
+.dgroup dd{color:var(--text);overflow-wrap:anywhere}
+.dobs{grid-column:1/-1;display:grid;gap:10px;font-size:12.5px}
+.dobs b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:2px}
+.dobs p{white-space:pre-line;max-width:110ch}
+.state{padding:40px;text-align:center;color:var(--text-light)}
+.state.err{color:var(--crit-ink)}
+.more{display:block;margin:12px auto 0}
+
+#tip{position:fixed;z-index:10;pointer-events:none;background:var(--surface);color:var(--text);border:1px solid var(--border);box-shadow:0 4px 14px rgba(0,0,0,.15);border-radius:8px;padding:8px 10px;font-size:12px;max-width:260px}
+#tip b{display:block;margin-bottom:3px}
+#tip .r{display:flex;justify-content:space-between;gap:14px;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="top-row">
+      <h1>Padrón ATM <span>/ Consulta por jurisdicción</span></h1>
+      <div class="src" id="src">Cargando…</div>
+    </div>
+    <p>Aulas Taller Móviles del padrón validado. Filtrá por jurisdicción y cualquier otro campo; los indicadores, gráficos y tablas se recalculan con la selección. Hacé clic en una barra o en una fila del resumen para filtrar.</p>
+  </header>
+
+  <section class="filters" aria-label="Filtros">
+    <div class="filters-head">
+      <span class="section-label">Filtros</span>
+      <span class="count" id="count"></span>
+      <button class="btn primary" id="clear" type="button">Limpiar filtros</button>
+    </div>
+    <div class="filter-grid" id="filter-grid">
+      <div class="field search">
+        <label for="q">Buscar texto</label>
+        <input id="q" type="search" placeholder="ATM N°, CUE, dominio, localidad, observaciones…" autocomplete="off">
+      </div>
+    </div>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <section class="kpis" id="kpis" aria-label="Indicadores"></section>
+
+  <div class="grid2">
+    <section class="panel">
+      <h2>ATMs por jurisdicción</h2>
+      <p class="hint">Segmentadas por etiqueta de estado funcional</p>
+      <div class="legend" id="ef-legend"></div>
+      <div class="bars" id="ch-jur"></div>
+    </section>
+    <section class="panel">
+      <h2>Especialidad real vigente</h2>
+      <p class="hint">Cantidad de ATMs</p>
+      <div class="bars" id="ch-esp"></div>
+    </section>
+  </div>
+
+  <div class="grid3">
+    <section class="panel"><h2>Estado de uso</h2><p class="hint">Cantidad de ATMs</p><div class="bars" id="ch-uso"></div></section>
+    <section class="panel"><h2>Apta para dictar cursos</h2><p class="hint">Cantidad de ATMs</p><div class="bars" id="ch-cursos"></div></section>
+    <section class="panel"><h2>Apta para circular</h2><p class="hint">Cantidad de ATMs</p><div class="bars" id="ch-circ"></div></section>
+  </div>
+
+  <section class="panel" style="margin-top:14px">
+    <div class="list-head">
+      <h2>Resumen</h2>
+      <div class="tools">
+        <label for="groupby" class="section-label">Agrupar por</label>
+        <select id="groupby"></select>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table id="resumen-table"><thead></thead><tbody></tbody><tfoot></tfoot></table></div>
+  </section>
+
+  <section class="panel" style="margin-top:14px">
+    <div class="list-head">
+      <h2>Detalle de ATMs</h2>
+      <span class="count muted" id="count2"></span>
+      <div class="tools">
+        <button class="btn" id="copy" type="button">Copiar tabla</button>
+        <button class="btn" id="csv" type="button">Descargar CSV</button>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table id="detalle-table"><thead></thead><tbody><tr><td class="state">Cargando datos…</td></tr></tbody></table></div>
+    <button class="btn more" id="more" type="button" hidden>Mostrar más</button>
+  </section>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+const DATA_URL = 'padron_data.json';
+
+const LABELS = {
+  jurisdiccion:'Jurisdicción', atm:'ATM N°', cue:'CUE N°', dominio:'Dominio', chasis:'Chasis N°', patrimonio:'Patrimonio',
+  codigo_ef:'Código estado funcional', etiqueta_ef:'Estado funcional', especialidad_decl:'Especialidad declarada',
+  especialidad_real:'Especialidad real', coincide_esp:'¿Coincide especialidad?', estado_uso:'Estado de uso',
+  apta_circular:'Apta para circular', apta_cursos:'Apta para cursos', ploteo:'Ploteo MCH', convenio:'Estado del convenio',
+  convenio_venc:'Vencimiento del convenio', localidad:'Localidad actual', provincia_ubic:'Provincia de ubicación',
+  institucion:'Institución / predio anfitrión', emplazamiento:'Tipo de emplazamiento', tenencia:'Modalidad de tenencia',
+  fecha_llegada:'Llegada a ubicación actual', localidad_prox:'Localidad próxima', provincia_prox:'Provincia próxima',
+  fecha_traslado:'Fecha estimada de traslado', poliza_inicio:'Inicio póliza', poliza_fin:'Fin póliza',
+  poliza_estado:'Estado de póliza', poliza:'Póliza', cursos_activos:'Cursos activos', matricula:'Matrícula registrada',
+  cursos_finalizados:'Cursos finalizados', matricula_finalizados:'Matrícula cursos finalizados',
+  cursos_planificados:'Cursos planificados', preinscriptos:'Preinscriptos planificados', detalle_cursos:'Detalle de cursos',
+  fecha_ultimo_curso:'Fin último curso', modalidad_traslado:'Modalidad de traslado', acta:'Acta complementaria',
+  acta_fecha:'Fecha acta complementaria', plan_mejora:'Plan de mejora', plan_mejora_exp:'Expediente plan de mejora',
+  fecha_relevamiento:'Último relevamiento', responsable:'Responsable / referente',
+  obs_ef:'Observaciones estado funcional', obs_esp:'Observación de especialidad', obs_gen:'Observaciones generales',
+  _cursos:'Actividad de cursos'
+};
+// Grupos de campos tal como están en el Excel
+const GRUPOS = [
+  ['Núcleo', ['jurisdiccion','atm','cue','dominio','chasis','patrimonio']],
+  ['Nivel 1 · Estado', ['codigo_ef','etiqueta_ef','especialidad_decl','especialidad_real','coincide_esp','estado_uso','apta_circular','apta_cursos','ploteo','convenio','convenio_venc']],
+  ['Nivel 2 · Ubicación y póliza', ['localidad','provincia_ubic','institucion','emplazamiento','tenencia','fecha_llegada','localidad_prox','provincia_prox','fecha_traslado','poliza_inicio','poliza_fin','poliza_estado','poliza','modalidad_traslado']],
+  ['Nivel 3 · Cursos y gestión', ['cursos_activos','matricula','cursos_finalizados','matricula_finalizados','cursos_planificados','preinscriptos','fecha_ultimo_curso','acta','acta_fecha','plan_mejora','plan_mejora_exp','fecha_relevamiento','responsable']],
+];
+const OBS = ['detalle_cursos','obs_ef','obs_esp','obs_gen'];
+
+const FILTROS = ['jurisdiccion','provincia_ubic','patrimonio','etiqueta_ef','especialidad_real','estado_uso',
+  'apta_cursos','apta_circular','coincide_esp','_cursos','plan_mejora','responsable'];
+const AGRUPAR = ['jurisdiccion','provincia_ubic','especialidad_real','etiqueta_ef','estado_uso','patrimonio','responsable'];
+
+const EF_ORDER = ['Inversión menor','Puesta a punto','Inversión sustantiva','Desestimar continuidad','Sin datos disponibles'];
+const EF_CLASS = {'Inversión menor':'ok','Puesta a punto':'warn','Inversión sustantiva':'serious','Desestimar continuidad':'crit','Sin datos disponibles':'none'};
+const EF_VAR = {ok:'--ok',warn:'--warn',serious:'--serious',crit:'--crit',none:'--none'};
+const SIN = 'Sin dato';
+const NUM = ['cursos_activos','matricula','cursos_finalizados','matricula_finalizados'];
+
+let DATA = [], META = {};
+let st = {f:{}, q:'', sortKey:'jurisdiccion', sortDir:1, rSortKey:'n', rSortDir:-1, groupBy:'jurisdiccion', exp:null, limit:60};
+
+const $ = id => document.getElementById(id);
+const esc = s => (s ?? '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = n => (n ?? 0).toLocaleString('es-AR');
+const val = (r,k) => { const v = r[k]; return (v === '' || v == null) ? SIN : String(v); };
+const efClass = v => EF_CLASS[v] || 'none';
+const sum = (rows,k) => rows.reduce((a,r)=>a+(+r[k]||0),0);
+const pct = (a,b) => b ? Math.round(a*100/b) + '%' : '—';
+const cmpEs = (a,b) => a.localeCompare(b,'es',{sensitivity:'base'});
+
+async function cargar(){
+  try{
+    const res = await fetch(DATA_URL, {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    DATA = json.atms || []; META = json.meta || {};
+    DATA.forEach(r => {
+      r._cursos = (+r.cursos_activos > 0) ? 'Con cursos activos' : 'Sin cursos activos';
+      r._atm_n = parseInt(r.atm) || 0;
+      r._txt = Object.entries(r).filter(([k])=>!k.startsWith('_')).map(([,v])=>v).join(' ').toLowerCase();
+    });
+    $('src').textContent = `${META.hoja || 'Padrón'} · ${fmt(DATA.length)} ATMs`;
+    initControles();
+    render();
+  }catch(e){
+    $('src').textContent = 'Error al cargar';
+    document.querySelector('#detalle-table tbody').innerHTML =
+      `<tr><td class="state err">No se pudo cargar ${esc(DATA_URL)} (${esc(e.message)}). Verificá que el archivo esté junto a esta página.</td></tr>`;
+  }
+}
+
+function initControles(){
+  const grid = $('filter-grid');
+  FILTROS.forEach(k => {
+    const d = document.createElement('div'); d.className = 'field';
+    d.innerHTML = `<label for="f-${k}">${LABELS[k]}</label><select id="f-${k}" data-k="${k}"></select>`;
+    grid.appendChild(d);
+    d.querySelector('select').addEventListener('change', e => setF(k, e.target.value));
+  });
+  $('groupby').innerHTML = AGRUPAR.map(k=>`<option value="${k}">${LABELS[k]}</option>`).join('');
+  $('groupby').addEventListener('change', e => { st.groupBy = e.target.value; renderResumen(filtrar()); });
+  $('q').addEventListener('input', e => { st.q = e.target.value.trim().toLowerCase(); st.limit = 60; render(); });
+  $('clear').addEventListener('click', () => { st.f = {}; st.q = ''; $('q').value = ''; st.limit = 60; render(); });
+  $('more').addEventListener('click', () => { st.limit += 100; renderDetalle(filtrar()); });
+  $('csv').addEventListener('click', descargarCSV);
+  $('copy').addEventListener('click', copiarTabla);
+  $('ef-legend').innerHTML = EF_ORDER.map(v=>`<span><i class="sw" style="background:var(${EF_VAR[efClass(v)]})"></i>${v}</span>`).join('');
+}
+
+function setF(k, v){
+  if(v) st.f[k] = v; else delete st.f[k];
+  st.limit = 60; st.exp = null;
+  render();
+}
+function toggleF(k, v){ setF(k, st.f[k] === v ? '' : v); }
+
+function pasa(r, excepto){
+  for(const [k,v] of Object.entries(st.f)){
+    if(k === excepto) continue;
+    if(val(r,k) !== v) return false;
+  }
+  if(st.q && !st.q.split(/\s+/).every(t => r._txt.includes(t))) return false;
+  return true;
+}
+const filtrar = () => DATA.filter(r => pasa(r));
+
+function contar(rows, k){
+  const m = new Map();
+  rows.forEach(r => { const v = val(r,k); m.set(v,(m.get(v)||0)+1); });
+  return m;
+}
+
+function render(){
+  const rows = filtrar();
+  $('count').innerHTML = `Mostrando <b>${fmt(rows.length)}</b> de ${fmt(DATA.length)} ATMs`;
+  renderSelects(); renderChips(); renderKPIs(rows); renderCharts(rows); renderResumen(rows); renderDetalle(rows);
+}
+
+// Opciones con conteo facetado: cuenta respetando los demás filtros
+function renderSelects(){
+  FILTROS.forEach(k => {
+    const sel = $('f-'+k);
+    const base = DATA.filter(r => pasa(r, k));
+    const cnt = contar(base, k);
+    const todos = [...new Set(DATA.map(r=>val(r,k)))];
+    todos.sort((a,b)=> k==='etiqueta_ef' ? EF_ORDER.indexOf(a)-EF_ORDER.indexOf(b) : (a===SIN)-(b===SIN) || cmpEs(a,b));
+    sel.innerHTML = `<option value="">Todas (${fmt(base.length)})</option>` +
+      todos.map(v => `<option value="${esc(v)}"${cnt.get(v)?'':' disabled'}>${esc(v)} (${cnt.get(v)||0})</option>`).join('');
+    sel.value = st.f[k] || '';
+    sel.classList.toggle('on', !!st.f[k]);
+  });
+}
+
+function renderChips(){
+  const chips = Object.entries(st.f).map(([k,v]) =>
+    `<button class="chip" type="button" data-k="${k}"><i>${LABELS[k]}:</i> ${esc(v)} <span class="x" aria-label="Quitar">✕</span></button>`);
+  if(st.q) chips.push(`<button class="chip" type="button" data-k="_q"><i>Texto:</i> “${esc(st.q)}” <span class="x">✕</span></button>`);
+  $('chips').innerHTML = chips.join('');
+  $('chips').querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+    if(c.dataset.k === '_q'){ st.q=''; $('q').value=''; render(); } else setF(c.dataset.k, '');
+  }));
+}
+
+function renderKPIs(rows){
+  const n = rows.length;
+  const activas = rows.filter(r=>r.estado_uso==='Activa').length;
+  const aptas = rows.filter(r=>r.apta_cursos==='Sí').length;
+  const conCursos = rows.filter(r=>+r.cursos_activos>0).length;
+  const jur = new Set(rows.map(r=>r.jurisdiccion)).size;
+  const k = [
+    [fmt(n), 'ATMs', `${jur} jurisdicci${jur===1?'ón':'ones'}`],
+    [fmt(activas), 'Activas', `${pct(activas,n)} del total`],
+    [fmt(aptas), 'Aptas para cursos', `${pct(aptas,n)} del total`],
+    [fmt(sum(rows,'cursos_activos')), 'Cursos activos', `en ${fmt(conCursos)} ATMs`],
+    [fmt(sum(rows,'matricula')), 'Matrícula registrada', 'cursos activos'],
+    [fmt(sum(rows,'cursos_finalizados')), 'Cursos finalizados', `${fmt(sum(rows,'matricula_finalizados'))} egresados`],
+  ];
+  $('kpis').innerHTML = k.map(([a,b,c])=>`<div class="kpi"><div class="n">${a}</div><div class="l">${b}</div><div class="s">${c}</div></div>`).join('');
+}
+
+function renderCharts(rows){
+  // Jurisdicción apilada por estado funcional. Se calcula ignorando el filtro de jurisdicción
+  // para que se vean las demás atenuadas y se pueda cambiar con un clic.
+  const baseJ = DATA.filter(r => pasa(r,'jurisdiccion'));
+  const porJ = new Map();
+  baseJ.forEach(r => {
+    const j = val(r,'jurisdiccion'); if(!porJ.has(j)) porJ.set(j, {n:0});
+    const o = porJ.get(j); o.n++; const e = val(r,'etiqueta_ef'); o[e] = (o[e]||0)+1;
+  });
+  const listJ = [...porJ.entries()].sort((a,b)=>b[1].n-a[1].n || cmpEs(a[0],b[0]));
+  const maxJ = Math.max(1, ...listJ.map(x=>x[1].n));
+  $('ch-jur').innerHTML = listJ.length ? listJ.map(([j,o]) => {
+    const segs = EF_ORDER.filter(e=>o[e]).map(e =>
+      `<div class="seg" style="width:${o[e]/maxJ*100}%;background:var(${EF_VAR[efClass(e)]})"></div>`).join('');
+    const tip = `<b>${esc(j)}</b>` + EF_ORDER.filter(e=>o[e]).map(e=>`<div class="r"><span>${e}</span><span>${o[e]}</span></div>`).join('') + `<div class="r"><span>Total</span><span>${o.n}</span></div>`;
+    const cls = st.f.jurisdiccion ? (st.f.jurisdiccion===j ? 'sel' : 'dim') : '';
+    return `<div class="brow ${cls}" data-k="jurisdiccion" data-v="${esc(j)}" data-tip="${esc(tip)}"><span class="lab">${esc(j)}</span><div class="track">${segs}</div><span class="val">${o.n}</span></div>`;
+  }).join('') : '<p class="muted">Sin resultados</p>';
+
+  barras('ch-esp', 'especialidad_real');
+  barras('ch-uso', 'estado_uso');
+  barras('ch-cursos', 'apta_cursos');
+  barras('ch-circ', 'apta_circular');
+
+  document.querySelectorAll('.brow').forEach(el => el.addEventListener('click', () => toggleF(el.dataset.k, el.dataset.v)));
+}
+
+function barras(id, k){
+  const base = DATA.filter(r => pasa(r,k));
+  const list = [...contar(base,k).entries()].sort((a,b)=>b[1]-a[1] || cmpEs(a[0],b[0]));
+  const max = Math.max(1, ...list.map(x=>x[1]));
+  $(id).innerHTML = list.length ? list.map(([v,n]) => {
+    const cls = st.f[k] ? (st.f[k]===v ? 'sel' : 'dim') : '';
+    const tip = `<b>${esc(v)}</b><div class="r"><span>ATMs</span><span>${n} (${pct(n,base.length)})</span></div>`;
+    return `<div class="brow ${cls}" data-k="${k}" data-v="${esc(v)}" data-tip="${esc(tip)}"><span class="lab">${esc(v)}</span><div class="track"><div class="seg single" style="width:${n/max*100}%"></div></div><span class="val">${n}</span></div>`;
+  }).join('') : '<p class="muted">Sin resultados</p>';
+}
+
+function renderResumen(rows){
+  const g = st.groupBy;
+  const m = new Map();
+  rows.forEach(r => {
+    const v = val(r,g); if(!m.has(v)) m.set(v, {v, n:0, act:0, apt:0, ok:0, cursos_activos:0, matricula:0, cursos_finalizados:0, matricula_finalizados:0});
+    const o = m.get(v); o.n++;
+    if(r.estado_uso==='Activa') o.act++;
+    if(r.apta_cursos==='Sí') o.apt++;
+    if(r.etiqueta_ef==='Inversión menor') o.ok++;
+    NUM.forEach(k => o[k] += (+r[k]||0));
+  });
+  const cols = [['v',LABELS[g],''],['n','ATMs','num'],['act','Activas','num'],['apt','Aptas cursos','num'],['ok','Inversión menor','num'],
+    ['cursos_activos','Cursos activos','num'],['matricula','Matrícula','num'],['cursos_finalizados','Finalizados','num'],['matricula_finalizados','Egresados','num']];
+  const list = [...m.values()].sort((a,b)=>{
+    const k = st.rSortKey, av = a[k], bv = b[k];
+    return (typeof av==='string' ? cmpEs(av,bv) : av-bv) * st.rSortDir || cmpEs(a.v,b.v);
+  });
+  const t = $('resumen-table');
+  t.tHead.innerHTML = '<tr>' + cols.map(([k,l,c])=>`<th class="${c}${st.rSortKey===k?' sorted'+(st.rSortDir>0?' asc':''):''}" data-k="${k}">${l}</th>`).join('') + '</tr>';
+  t.tBodies[0].innerHTML = list.length ? list.map(o => `<tr data-v="${esc(o.v)}">` + cols.map(([k,,c]) =>
+    k==='v' ? `<td>${g==='etiqueta_ef' ? `<span class="pill ${efClass(o.v)}">${esc(o.v)}</span>` : esc(o.v)}</td>`
+    : `<td class="num">${fmt(o[k])}${(k==='act'||k==='apt'||k==='ok') && o.n ? ` <span class="muted">${pct(o[k],o.n)}</span>` : ''}</td>`).join('') + '</tr>').join('')
+    : `<tr><td colspan="${cols.length}" class="state">Sin resultados para estos filtros</td></tr>`;
+  const tot = {n:rows.length, act:rows.filter(r=>r.estado_uso==='Activa').length, apt:rows.filter(r=>r.apta_cursos==='Sí').length, ok:rows.filter(r=>r.etiqueta_ef==='Inversión menor').length};
+  NUM.forEach(k => tot[k] = sum(rows,k));
+  t.tFoot.innerHTML = list.length > 1 ? '<tr><td>Total</td>' + cols.slice(1).map(([k])=>`<td class="num">${fmt(tot[k])}</td>`).join('') + '</tr>' : '';
+  t.tHead.querySelectorAll('th').forEach(th => th.addEventListener('click', () => {
+    const k = th.dataset.k;
+    if(st.rSortKey===k) st.rSortDir *= -1; else { st.rSortKey = k; st.rSortDir = k==='v' ? 1 : -1; }
+    renderResumen(filtrar());
+  }));
+  t.tBodies[0].querySelectorAll('tr[data-v]').forEach(tr => tr.addEventListener('click', () => {
+    if(FILTROS.includes(g)) toggleF(g, tr.dataset.v);
+  }));
+}
+
+const DCOLS = [
+  ['jurisdiccion','Jurisdicción'],['_atm_n','ATM N°','num'],['cue','CUE'],['etiqueta_ef','Estado funcional'],
+  ['especialidad_real','Especialidad real'],['estado_uso','Estado de uso'],['apta_cursos','Apta cursos'],
+  ['apta_circular','Apta circular'],['localidad','Localidad actual'],['cursos_activos','Cursos','num'],['matricula','Matrícula','num']
+];
+
+function yn(v){
+  if(!v) return '<span class="muted">—</span>';
+  const c = v==='Sí' ? 'yes' : v==='No' ? 'no' : v==='Requiere revisión' ? 'rev' : 'muted';
+  return `<span class="${c}">${esc(v)}</span>`;
+}
+
+function ordenar(rows){
+  const k = st.sortKey, d = st.sortDir;
+  return rows.slice().sort((a,b)=>{
+    let av = a[k], bv = b[k];
+    if(k==='etiqueta_ef'){ av = EF_ORDER.indexOf(val(a,k)); bv = EF_ORDER.indexOf(val(b,k)); }
+    if(typeof av==='number' || typeof bv==='number') return ((+av||0)-(+bv||0))*d || a._atm_n-b._atm_n;
+    return cmpEs(String(av??''),String(bv??''))*d || a._atm_n-b._atm_n;
+  });
+}
+
+function renderDetalle(rows){
+  const t = $('detalle-table');
+  t.tHead.innerHTML = '<tr>' + DCOLS.map(([k,l,c])=>`<th class="${c||''}${st.sortKey===k?' sorted'+(st.sortDir>0?' asc':''):''}" data-k="${k}">${l}</th>`).join('') + '</tr>';
+  t.tHead.querySelectorAll('th').forEach(th => th.addEventListener('click', () => {
+    const k = th.dataset.k;
+    if(st.sortKey===k) st.sortDir *= -1; else { st.sortKey = k; st.sortDir = 1; }
+    renderDetalle(filtrar());
+  }));
+  $('count2').textContent = `${fmt(rows.length)} ATMs`;
+  const list = ordenar(rows);
+  const vis = list.slice(0, st.limit);
+  $('more').hidden = list.length <= st.limit;
+  $('more').textContent = `Mostrar más (${fmt(list.length - st.limit)} restantes)`;
+  if(!vis.length){ t.tBodies[0].innerHTML = `<tr><td colspan="${DCOLS.length}" class="state">No hay ATMs con estos filtros.</td></tr>`; return; }
+  t.tBodies[0].innerHTML = vis.map(r => {
+    const id = r.jurisdiccion + '|' + r.atm, open = st.exp === id;
+    let h = `<tr class="${open?'exp':''}" data-id="${esc(id)}" tabindex="0" aria-expanded="${open}">
+      <td>${esc(r.jurisdiccion)}</td><td class="num mono">${esc(r.atm)}</td><td class="mono">${esc(r.cue)||'<span class="muted">—</span>'}</td>
+      <td><span class="pill ${efClass(val(r,'etiqueta_ef'))}">${esc(val(r,'etiqueta_ef'))}</span></td>
+      <td>${esc(r.especialidad_real)||'<span class="muted">—</span>'}</td><td>${esc(r.estado_uso)||'<span class="muted">—</span>'}</td>
+      <td>${yn(r.apta_cursos)}</td><td>${yn(r.apta_circular)}</td>
+      <td>${esc(r.localidad)}<div class="muted" style="font-size:11.5px">${esc(r.provincia_ubic)}</div></td>
+      <td class="num">${r.cursos_activos ?? '—'}</td><td class="num">${r.matricula ?? '—'}</td></tr>`;
+    if(open){
+      h += `<tr class="detail"><td colspan="${DCOLS.length}"><div class="dgroups">` +
+        GRUPOS.map(([g,ks]) => `<div class="dgroup"><h3>${g}</h3><dl>` +
+          ks.map(k => `<dt>${LABELS[k]}</dt><dd>${(r[k]===''||r[k]==null) ? '<span class="muted">—</span>' : esc(r[k])}</dd>`).join('') + '</dl></div>').join('') +
+        `<div class="dobs">` + OBS.filter(k=>r[k]).map(k=>`<div><b>${LABELS[k]}</b><p>${esc(r[k])}</p></div>`).join('') + `</div></div></td></tr>`;
+    }
+    return h;
+  }).join('');
+  t.tBodies[0].querySelectorAll('tr[data-id]').forEach(tr => {
+    const go = () => { st.exp = st.exp === tr.dataset.id ? null : tr.dataset.id; renderDetalle(filtrar()); };
+    tr.addEventListener('click', go);
+    tr.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } });
+  });
+}
+
+// Exportación: todas las columnas del padrón para las filas filtradas
+const EXPORT_KEYS = GRUPOS.flatMap(g=>g[1]).concat(OBS);
+function tablaTexto(sep){
+  const q = v => { const s = (v ?? '').toString(); return sep===',' && /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s.replace(/[\t\n]+/g,' '); };
+  return [EXPORT_KEYS.map(k=>q(LABELS[k])).join(sep)].concat(ordenar(filtrar()).map(r => EXPORT_KEYS.map(k=>q(r[k])).join(sep))).join('\n');
+}
+function descargarCSV(){
+  const blob = new Blob(['﻿' + tablaTexto(',')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'padron_filtrado' + (st.f.jurisdiccion ? '_' + st.f.jurisdiccion.replace(/\W+/g,'_') : '') + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+async function copiarTabla(){
+  const b = $('copy');
+  try{ await navigator.clipboard.writeText(tablaTexto('\t')); b.textContent = 'Copiada: pegala en Excel'; }
+  catch(e){ b.textContent = 'No se pudo copiar'; }
+  setTimeout(()=> b.textContent = 'Copiar tabla', 2200);
+}
+
+// Tooltip
+const tip = $('tip');
+document.addEventListener('mousemove', e => {
+  const el = e.target.closest('[data-tip]');
+  if(!el){ tip.hidden = true; return; }
+  tip.innerHTML = el.dataset.tip; tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if(x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if(y + h > innerHeight - 8) y = e.clientY - h - 14;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+});
+document.addEventListener('scroll', () => tip.hidden = true, {passive:true});
+
+cargar();
+</script>
+</body>
+</html>
